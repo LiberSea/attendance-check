@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ course.name }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>{{ course.name }}</h1>
+  <p>강의 코드: <strong>{{ course.code }}</strong></p>
+  <p>담당 교수: {{ course.professor.username }}</p>
+</div>
+<div class="card">
+  <h2>수강생 ({{ enrollments.count }}명)</h2>
+  {% if enrollments %}
+    <table>
+      <tr><th>학번</th><th>이름</th></tr>
+      {% for enrollment in enrollments %}
+        <tr>
+          <td>{{ enrollment.student.student_id }}</td>
+          <td>{{ enrollment.student.username }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>아직 수강생이 없습니다.</p>
+  {% endif %}
+</div>
+{% endblock %}

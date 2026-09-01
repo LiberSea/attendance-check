@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}강의 개설{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>강의 개설</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">개설하기</button>
+  </form>
+</div>
+{% endblock %}

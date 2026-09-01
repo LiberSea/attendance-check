@@ -8,4 +8,13 @@
     <p>학번: {{ user.student_id }}</p>
   {% endif %}
 </div>
+<div class="card">
+  <h2>강의</h2>
+  <p><a href="{% url 'courses:list' %}">내 강의 목록</a></p>
+  {% if user.role == "professor" %}
+    <p><a href="{% url 'courses:create' %}">+ 새 강의 개설</a></p>
+  {% else %}
+    <p><a href="{% url 'courses:enroll' %}">+ 수강신청</a></p>
+  {% endif %}
+</div>
 {% endblock %}
