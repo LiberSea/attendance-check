@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}대학교 출석체크 시스템{% endblock %}</title>
+<style>
+  body { font-family: -apple-system, sans-serif; margin: 0; background: #f7f7f9; color: #1a1a1a; }
+  nav { background: #1f2937; color: #fff; padding: 12px 24px; display: flex; gap: 16px; align-items: center; }
+  nav a { color: #fff; text-decoration: none; }
+  nav a:hover { text-decoration: underline; }
+  nav .spacer { flex: 1; }
+  nav button { background: none; border: 1px solid #fff; color: #fff; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+  main { max-width: 720px; margin: 32px auto; padding: 0 16px; }
+  .card { background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 16px; }
+  form p { margin: 8px 0; }
+  input, select { padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; }
+  button, input[type=submit] { background: #2563eb; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+  .errorlist { color: #dc2626; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e5e7eb; }
+</style>
+</head>
+<body>
+<nav>
+  <a href="{% url 'home' %}">출석체크 시스템</a>
+  <div class="spacer"></div>
+  {% if user.is_authenticated %}
+    <span>{{ user.username }}님 ({{ user.get_role_display }})</span>
+    <a href="{% url 'accounts:dashboard' %}">대시보드</a>
+    <form action="{% url 'logout' %}" method="post" style="margin:0">
+      {% csrf_token %}
+      <button type="submit">로그아웃</button>
+    </form>
+  {% else %}
+    <a href="{% url 'login' %}">로그인</a>
+    <a href="{% url 'accounts:signup' %}">회원가입</a>
+  {% endif %}
+</nav>
+<main>
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

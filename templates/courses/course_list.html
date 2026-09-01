@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}내 강의{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>내 강의</h1>
+  {% if user.role == "professor" %}
+    <p><a href="{% url 'courses:create' %}">+ 새 강의 개설</a></p>
+  {% else %}
+    <p><a href="{% url 'courses:enroll' %}">+ 수강신청</a></p>
+  {% endif %}
+  {% if courses %}
+    <table>
+      <tr><th>코드</th><th>강의명</th><th></th></tr>
+      {% for course in courses %}
+        <tr>
+          <td>{{ course.code }}</td>
+          <td>{{ course.name }}</td>
+          <td><a href="{% url 'courses:detail' course.pk %}">보기</a></td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>등록된 강의가 없습니다.</p>
+  {% endif %}
+</div>
+{% endblock %}

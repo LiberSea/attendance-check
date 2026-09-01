@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}출석 현황 - {{ course.name }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>{{ course.name }} 내 출석 현황</h1>
+  {% if rows %}
+    <table>
+      <tr><th>날짜</th><th>상태</th><th></th></tr>
+      {% for session, record in rows %}
+        <tr>
+          <td>{{ session.date }}</td>
+          <td>{% if record %}{{ record.get_status_display }}{% else %}{% if session.is_open %}미체크(진행중){% else %}결석{% endif %}{% endif %}</td>
+          <td><a href="{% url 'attendance:session_detail' session.pk %}">보기</a></td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>출석 기록이 없습니다.</p>
+  {% endif %}
+</div>
+{% endblock %}
