@@ -15,7 +15,8 @@
     {% if user.role == "professor" %}
       <a href="{% url 'courses:create' %}">+ 새 강의 개설</a>
     {% else %}
-      <a href="{% url 'courses:enroll' %}">+ 수강신청</a>
+      <a href="{% url 'courses:timetable' %}">시간표에서 강의 찾기 →</a>
+      <a href="{% url 'courses:enroll' %}">+ 강의 코드로 수강신청</a>
     {% endif %}
   </div>
 </div>

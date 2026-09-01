@@ -3,11 +3,12 @@
 {% block content %}
 <div class="card">
   <h1>수강신청</h1>
-  <p>교수님께 안내받은 강의 코드를 입력하세요.</p>
+  <p class="muted">교수님께 안내받은 강의 코드를 입력하세요.</p>
   <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">신청하기</button>
   </form>
+  <p><a href="{% url 'courses:timetable' %}">시간표에서 강의 찾기 →</a></p>
 </div>
 {% endblock %}

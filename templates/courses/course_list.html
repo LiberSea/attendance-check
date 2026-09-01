@@ -6,7 +6,7 @@
   {% if user.role == "professor" %}
     <p><a href="{% url 'courses:create' %}">+ 새 강의 개설</a></p>
   {% else %}
-    <p><a href="{% url 'courses:enroll' %}">+ 수강신청</a></p>
+    <p><a href="{% url 'courses:timetable' %}">시간표에서 강의 찾기 →</a></p>
   {% endif %}
   {% if courses %}
     <div class="table-wrap">
