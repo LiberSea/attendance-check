@@ -9,18 +9,20 @@
     <p><a href="{% url 'courses:enroll' %}">+ 수강신청</a></p>
   {% endif %}
   {% if courses %}
-    <table>
-      <tr><th>코드</th><th>강의명</th><th></th></tr>
-      {% for course in courses %}
-        <tr>
-          <td>{{ course.code }}</td>
-          <td>{{ course.name }}</td>
-          <td><a href="{% url 'courses:detail' course.pk %}">보기</a></td>
-        </tr>
-      {% endfor %}
-    </table>
+    <div class="table-wrap">
+      <table>
+        <tr><th>코드</th><th>강의명</th><th></th></tr>
+        {% for course in courses %}
+          <tr>
+            <td>{{ course.code }}</td>
+            <td>{{ course.name }}</td>
+            <td><a href="{% url 'courses:detail' course.pk %}">보기 →</a></td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
   {% else %}
-    <p>등록된 강의가 없습니다.</p>
+    <p class="muted">등록된 강의가 없습니다.</p>
   {% endif %}
 </div>
 {% endblock %}

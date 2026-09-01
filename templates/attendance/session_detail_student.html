@@ -2,17 +2,36 @@
 {% block title %}출석 세션 - {{ course.name }}{% endblock %}
 {% block content %}
 <div class="card">
-  <h1>{{ course.name }} - {{ session.date }}</h1>
-  <p>상태: {% if session.is_open %}진행중{% else %}마감됨{% endif %}</p>
+  <h1>{{ course.name }} · {{ session.date }}</h1>
+  <p class="row">
+    상태:
+    {% if session.is_open %}
+      <span class="badge badge-open">진행중</span>
+    {% else %}
+      <span class="badge badge-closed">마감됨</span>
+    {% endif %}
+  </p>
+
+  <hr class="divider">
+
   {% if my_record %}
-    <p>내 출석 상태: <strong>{{ my_record.get_status_display }}</strong></p>
-    {% if my_record.checked_at %}<p>체크 시각: {{ my_record.checked_at }}</p>{% endif %}
+    <p class="row">
+      내 출석 상태:
+      {% if my_record.status == "present" %}
+        <span class="badge badge-present">출석</span>
+      {% elif my_record.status == "late" %}
+        <span class="badge badge-late">지각</span>
+      {% else %}
+        <span class="badge badge-absent">결석</span>
+      {% endif %}
+    </p>
+    {% if my_record.checked_at %}<p class="muted">체크 시각: {{ my_record.checked_at }}</p>{% endif %}
   {% else %}
-    <p>아직 출석 체크를 하지 않았습니다.</p>
+    <p class="muted">아직 출석 체크를 하지 않았습니다.</p>
   {% endif %}
 
   {% if session.is_open and not my_record or session.is_open and my_record.status != "present" %}
-    <p><a href="{% url 'attendance:check_in' session.pk %}">출석 코드 입력하기</a></p>
+    <p><a href="{% url 'attendance:check_in' session.pk %}">출석 코드 입력하기 →</a></p>
   {% endif %}
 </div>
 <p><a href="{% url 'attendance:course_sessions' course.pk %}">← 내 출석 현황으로</a></p>

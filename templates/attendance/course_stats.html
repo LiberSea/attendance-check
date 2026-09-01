@@ -3,26 +3,28 @@
 {% block content %}
 <div class="card">
   <h1>{{ course.name }} 출석 통계</h1>
-  <p>마감된 세션 수: {{ total_sessions }}</p>
-  <p><a href="{% url 'attendance:export_csv' course.pk %}">CSV로 내보내기</a></p>
+  <p class="muted">마감된 세션 수: {{ total_sessions }}</p>
+  <p><a href="{% url 'attendance:export_csv' course.pk %}">CSV로 내보내기 →</a></p>
 </div>
 <div class="card">
   {% if rows %}
-    <table>
-      <tr><th>학번</th><th>이름</th><th>출석</th><th>지각</th><th>결석</th><th>출석률</th></tr>
-      {% for row in rows %}
-        <tr>
-          <td>{{ row.student.student_id }}</td>
-          <td>{{ row.student.username }}</td>
-          <td>{{ row.present }}</td>
-          <td>{{ row.late }}</td>
-          <td>{{ row.absent }}</td>
-          <td>{% if row.rate is not None %}{{ row.rate }}%{% else %}-{% endif %}</td>
-        </tr>
-      {% endfor %}
-    </table>
+    <div class="table-wrap">
+      <table>
+        <tr><th>학번</th><th>이름</th><th>출석</th><th>지각</th><th>결석</th><th>출석률</th></tr>
+        {% for row in rows %}
+          <tr>
+            <td>{{ row.student.student_id }}</td>
+            <td>{{ row.student.username }}</td>
+            <td>{{ row.present }}</td>
+            <td>{{ row.late }}</td>
+            <td>{{ row.absent }}</td>
+            <td><strong>{% if row.rate is not None %}{{ row.rate }}%{% else %}-{% endif %}</strong></td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
   {% else %}
-    <p>수강생이 없습니다.</p>
+    <p class="muted">수강생이 없습니다.</p>
   {% endif %}
 </div>
 <p><a href="{% url 'attendance:course_sessions' course.pk %}">← 세션 목록으로</a></p>

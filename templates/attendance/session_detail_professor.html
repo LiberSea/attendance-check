@@ -2,19 +2,36 @@
 {% block title %}출석 세션 - {{ course.name }}{% endblock %}
 {% block content %}
 <div class="card">
-  <h1>{{ course.name }} - {{ session.date }}</h1>
-  <p>상태:
-    {% if session.is_finalized %}마감됨
-    {% elif session.is_open %}진행중 (자동 마감: {{ session.auto_close_at }})
-    {% else %}시간 종료 (아직 마감 처리 전){% endif %}
+  <h1>{{ course.name }} · {{ session.date }}</h1>
+  <p class="row">
+    상태:
+    {% if session.is_finalized %}
+      <span class="badge badge-closed">마감됨</span>
+    {% elif session.is_open %}
+      <span class="badge badge-open">진행중</span>
+      <span class="muted">자동 마감 {{ session.auto_close_at }}</span>
+    {% else %}
+      <span class="badge badge-late">시간 종료</span>
+      <span class="muted">아직 마감 처리 전</span>
+    {% endif %}
   </p>
-  <p>지각 기준: 시작 후 {{ session.late_after_minutes }}분 / 자동 마감: {{ session.duration_minutes }}분</p>
+  <p class="muted">지각 기준: 시작 후 {{ session.late_after_minutes }}분 · 자동 마감: {{ session.duration_minutes }}분</p>
+
   {% if session.is_open %}
-    <p>출석 코드: <strong style="font-size:1.5em">{{ session.code }}</strong></p>
-    <p><img src="{% url 'attendance:session_qr' session.pk %}" alt="출석 QR코드" width="220" height="220"></p>
-    <p>학생들에게 코드를 알려주거나 QR코드를 스캔하도록 안내하세요.</p>
+    <hr class="divider">
+    <div class="stack">
+      <div>
+        <span class="code-display">{{ session.code }}</span>
+      </div>
+      <div class="qr-box">
+        <img src="{% url 'attendance:session_qr' session.pk %}" alt="출석 QR코드" width="200" height="200">
+      </div>
+      <p class="muted">학생들에게 코드를 알려주거나 QR코드를 스캔하도록 안내하세요.</p>
+    </div>
   {% endif %}
+
   {% if not session.is_finalized %}
+    <hr class="divider">
     <form method="post" action="{% url 'attendance:session_close' session.pk %}">
       {% csrf_token %}
       <button type="submit">세션 마감하기 (미체크인 학생 결석 처리)</button>
@@ -24,19 +41,29 @@
 <div class="card">
   <h2>출석 기록</h2>
   {% if records %}
-    <table>
-      <tr><th>학번</th><th>이름</th><th>상태</th><th>체크 시각</th></tr>
-      {% for record in records %}
-        <tr>
-          <td>{{ record.student.student_id }}</td>
-          <td>{{ record.student.username }}</td>
-          <td>{{ record.get_status_display }}</td>
-          <td>{{ record.checked_at|default:"-" }}</td>
-        </tr>
-      {% endfor %}
-    </table>
+    <div class="table-wrap">
+      <table>
+        <tr><th>학번</th><th>이름</th><th>상태</th><th>체크 시각</th></tr>
+        {% for record in records %}
+          <tr>
+            <td>{{ record.student.student_id }}</td>
+            <td>{{ record.student.username }}</td>
+            <td>
+              {% if record.status == "present" %}
+                <span class="badge badge-present">출석</span>
+              {% elif record.status == "late" %}
+                <span class="badge badge-late">지각</span>
+              {% else %}
+                <span class="badge badge-absent">결석</span>
+              {% endif %}
+            </td>
+            <td class="muted">{{ record.checked_at|default:"-" }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
   {% else %}
-    <p>아직 체크인한 학생이 없습니다.</p>
+    <p class="muted">아직 체크인한 학생이 없습니다.</p>
   {% endif %}
 </div>
 <p><a href="{% url 'attendance:course_sessions' course.pk %}">← 세션 목록으로</a></p>
