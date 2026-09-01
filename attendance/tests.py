@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import User
 from courses.models import Course
@@ -73,3 +74,44 @@ class AttendanceFlowTests(TestCase):
         response = self.client.post(reverse("attendance:check_in", args=[session.pk]), {"code": session.code})
         self.assertEqual(response.status_code, 200)
         self.assertFalse(AttendanceRecord.objects.filter(session=session, student=self.student, status="present").exists())
+
+
+class AttendanceStatsTests(TestCase):
+    def setUp(self):
+        self.professor = User.objects.create_user(
+            username="prof1", password="TestPass123!", role=User.Role.PROFESSOR
+        )
+        self.student = User.objects.create_user(
+            username="student1",
+            password="TestPass123!",
+            role=User.Role.STUDENT,
+            student_id="20240001",
+        )
+        self.course = Course.objects.create(name="자료구조", code="CS201", professor=self.professor)
+        self.course.enrollments.create(student=self.student)
+
+    def test_stats_page_requires_owner(self):
+        session = AttendanceSession.objects.create(course=self.course, date="2026-09-01")
+        session.records.create(student=self.student, status=AttendanceRecord.Status.PRESENT)
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("attendance:course_stats", args=[self.course.pk]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_stats_page_shows_attendance_rate(self):
+        session = AttendanceSession.objects.create(course=self.course, date="2026-09-01", closed_at=timezone.now())
+        session.records.create(student=self.student, status=AttendanceRecord.Status.PRESENT)
+        self.client.force_login(self.professor)
+        response = self.client.get(reverse("attendance:course_stats", args=[self.course.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "100.0%")
+
+    def test_csv_export(self):
+        session = AttendanceSession.objects.create(course=self.course, date="2026-09-01")
+        session.records.create(student=self.student, status=AttendanceRecord.Status.PRESENT)
+        self.client.force_login(self.professor)
+        response = self.client.get(reverse("attendance:export_csv", args=[self.course.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv")
+        content = response.content.decode("utf-8-sig")
+        self.assertIn("20240001", content)
+        self.assertIn("출석", content)

@@ -1,5 +1,7 @@
+import csv
+
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -134,3 +136,60 @@ def check_in(request, pk):
         form = CheckInForm()
 
     return render(request, "attendance/check_in.html", {"form": form, "session": session, "course": course})
+
+
+@login_required
+def course_stats(request, course_pk):
+    course = get_object_or_404(Course, pk=course_pk)
+    if not _is_course_owner(request.user, course):
+        return HttpResponseForbidden("교수만 출석 통계를 볼 수 있습니다.")
+
+    total_sessions = course.sessions.filter(closed_at__isnull=False).count()
+    rows = []
+    for enrollment in course.enrollments.select_related("student"):
+        student = enrollment.student
+        records = AttendanceRecord.objects.filter(session__course=course, student=student)
+        present = records.filter(status=AttendanceRecord.Status.PRESENT).count()
+        late = records.filter(status=AttendanceRecord.Status.LATE).count()
+        absent = records.filter(status=AttendanceRecord.Status.ABSENT).count()
+        rate = round((present + late) / total_sessions * 100, 1) if total_sessions else None
+        rows.append(
+            {"student": student, "present": present, "late": late, "absent": absent, "rate": rate}
+        )
+
+    return render(
+        request,
+        "attendance/course_stats.html",
+        {"course": course, "rows": rows, "total_sessions": total_sessions},
+    )
+
+
+@login_required
+def export_csv(request, course_pk):
+    course = get_object_or_404(Course, pk=course_pk)
+    if not _is_course_owner(request.user, course):
+        return HttpResponseForbidden("교수만 내보내기를 할 수 있습니다.")
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="{course.code}_attendance.csv"'
+    response.write("﻿")
+
+    writer = csv.writer(response)
+    writer.writerow(["날짜", "학번", "이름", "상태", "체크시각"])
+
+    records = (
+        AttendanceRecord.objects.filter(session__course=course)
+        .select_related("student", "session")
+        .order_by("session__date", "student__student_id")
+    )
+    for record in records:
+        writer.writerow(
+            [
+                record.session.date,
+                record.student.student_id,
+                record.student.username,
+                record.get_status_display(),
+                record.checked_at or "",
+            ]
+        )
+    return response
