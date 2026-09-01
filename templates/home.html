@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}홈 - 출석체크 시스템{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>대학교 출석체크 시스템</h1>
+  {% if user.is_authenticated %}
+    <p><a href="{% url 'accounts:dashboard' %}">대시보드로 이동</a></p>
+  {% else %}
+    <p>강의 출석을 온라인으로 손쉽게 관리하세요.</p>
+    <p><a href="{% url 'login' %}">로그인</a> 또는 <a href="{% url 'accounts:signup' %}">회원가입</a></p>
+  {% endif %}
+</div>
+{% endblock %}
