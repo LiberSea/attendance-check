@@ -11,7 +11,7 @@ from django.utils import timezone
 from accounts.models import User
 from courses.models import Course
 
-from .forms import CheckInForm
+from .forms import CheckInForm, SessionOpenForm
 from .models import AttendanceRecord, AttendanceSession
 
 
@@ -37,7 +37,7 @@ def course_sessions(request, course_pk):
         return render(
             request,
             "attendance/session_list_professor.html",
-            {"course": course, "sessions": sessions},
+            {"course": course, "sessions": sessions, "open_form": SessionOpenForm()},
         )
 
     my_records = {
@@ -59,8 +59,15 @@ def session_open(request, course_pk):
         return HttpResponseForbidden("교수만 출석 세션을 열 수 있습니다.")
 
     if request.method == "POST":
-        session = AttendanceSession.objects.create(course=course, date=timezone.localdate())
-        return redirect("attendance:session_detail", pk=session.pk)
+        form = SessionOpenForm(request.POST)
+        if form.is_valid():
+            session = AttendanceSession.objects.create(
+                course=course,
+                date=timezone.localdate(),
+                duration_minutes=form.cleaned_data["duration_minutes"],
+                late_after_minutes=form.cleaned_data["late_after_minutes"],
+            )
+            return redirect("attendance:session_detail", pk=session.pk)
 
     return redirect("attendance:course_sessions", course_pk=course.pk)
 
@@ -97,7 +104,7 @@ def session_close(request, pk):
     if not _is_course_owner(request.user, course):
         return HttpResponseForbidden("교수만 출석 세션을 마감할 수 있습니다.")
 
-    if request.method == "POST" and session.is_open:
+    if request.method == "POST" and session.closed_at is None:
         session.closed_at = timezone.now()
         session.save(update_fields=["closed_at"])
 
@@ -129,10 +136,11 @@ def check_in(request, pk):
             elif form.cleaned_data["code"].strip().upper() != session.code:
                 form.add_error("code", "출석 코드가 일치하지 않습니다.")
             else:
+                now = timezone.now()
                 AttendanceRecord.objects.update_or_create(
                     session=session,
                     student=request.user,
-                    defaults={"status": AttendanceRecord.Status.PRESENT, "checked_at": timezone.now()},
+                    defaults={"status": session.status_for_checkin_time(now), "checked_at": now},
                 )
                 return redirect("attendance:session_detail", pk=pk)
     else:

@@ -3,14 +3,21 @@
 {% block content %}
 <div class="card">
   <h1>{{ course.name }} - {{ session.date }}</h1>
-  <p>상태: {% if session.is_open %}진행중{% else %}마감됨{% endif %}</p>
+  <p>상태:
+    {% if session.is_finalized %}마감됨
+    {% elif session.is_open %}진행중 (자동 마감: {{ session.auto_close_at }})
+    {% else %}시간 종료 (아직 마감 처리 전){% endif %}
+  </p>
+  <p>지각 기준: 시작 후 {{ session.late_after_minutes }}분 / 자동 마감: {{ session.duration_minutes }}분</p>
   {% if session.is_open %}
     <p>출석 코드: <strong style="font-size:1.5em">{{ session.code }}</strong></p>
     <p><img src="{% url 'attendance:session_qr' session.pk %}" alt="출석 QR코드" width="220" height="220"></p>
     <p>학생들에게 코드를 알려주거나 QR코드를 스캔하도록 안내하세요.</p>
+  {% endif %}
+  {% if not session.is_finalized %}
     <form method="post" action="{% url 'attendance:session_close' session.pk %}">
       {% csrf_token %}
-      <button type="submit">세션 마감하기</button>
+      <button type="submit">세션 마감하기 (미체크인 학생 결석 처리)</button>
     </form>
   {% endif %}
 </div>

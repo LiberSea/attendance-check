@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -30,7 +32,10 @@ class AttendanceFlowTests(TestCase):
 
     def test_professor_can_open_session(self):
         self.client.force_login(self.professor)
-        response = self.client.post(reverse("attendance:session_open", args=[self.course.pk]))
+        response = self.client.post(
+            reverse("attendance:session_open", args=[self.course.pk]),
+            {"duration_minutes": 15, "late_after_minutes": 5},
+        )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(AttendanceSession.objects.filter(course=self.course).count(), 1)
 
@@ -150,3 +155,61 @@ class QrCodeTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.session.code)
+
+
+class LateAttendanceTests(TestCase):
+    def setUp(self):
+        self.professor = User.objects.create_user(
+            username="prof1", password="TestPass123!", role=User.Role.PROFESSOR
+        )
+        self.student = User.objects.create_user(
+            username="student1",
+            password="TestPass123!",
+            role=User.Role.STUDENT,
+            student_id="20240001",
+        )
+        self.course = Course.objects.create(name="자료구조", code="CS201", professor=self.professor)
+        self.course.enrollments.create(student=self.student)
+
+    def test_check_in_after_late_threshold_is_marked_late(self):
+        session = AttendanceSession.objects.create(
+            course=self.course, date="2026-09-01", duration_minutes=30, late_after_minutes=5
+        )
+        session.opened_at = timezone.now() - timedelta(minutes=10)
+        session.save(update_fields=["opened_at"])
+
+        self.client.force_login(self.student)
+        response = self.client.post(reverse("attendance:check_in", args=[session.pk]), {"code": session.code})
+        self.assertEqual(response.status_code, 302)
+        record = AttendanceRecord.objects.get(session=session, student=self.student)
+        self.assertEqual(record.status, AttendanceRecord.Status.LATE)
+
+    def test_session_auto_closes_after_duration_without_manual_close(self):
+        session = AttendanceSession.objects.create(
+            course=self.course, date="2026-09-01", duration_minutes=10, late_after_minutes=5
+        )
+        session.opened_at = timezone.now() - timedelta(minutes=20)
+        session.save(update_fields=["opened_at"])
+
+        self.assertFalse(session.is_open)
+        self.assertFalse(session.is_finalized)
+
+        self.client.force_login(self.student)
+        response = self.client.post(reverse("attendance:check_in", args=[session.pk]), {"code": session.code})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(AttendanceRecord.objects.filter(session=session, student=self.student).exists())
+
+    def test_professor_can_finalize_after_auto_timeout(self):
+        session = AttendanceSession.objects.create(
+            course=self.course, date="2026-09-01", duration_minutes=10, late_after_minutes=5
+        )
+        session.opened_at = timezone.now() - timedelta(minutes=20)
+        session.save(update_fields=["opened_at"])
+
+        self.client.force_login(self.professor)
+        response = self.client.post(reverse("attendance:session_close", args=[session.pk]))
+        self.assertEqual(response.status_code, 302)
+        session.refresh_from_db()
+        self.assertTrue(session.is_finalized)
+        record = AttendanceRecord.objects.get(session=session, student=self.student)
+        self.assertEqual(record.status, AttendanceRecord.Status.ABSENT)
