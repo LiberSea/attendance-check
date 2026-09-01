@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}출석 세션 - {{ course.name }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>{{ course.name }} - {{ session.date }}</h1>
+  <p>상태: {% if session.is_open %}진행중{% else %}마감됨{% endif %}</p>
+  {% if session.is_open %}
+    <p>출석 코드: <strong style="font-size:1.5em">{{ session.code }}</strong></p>
+    <p>학생들에게 이 코드를 공유해 출석 체크를 하도록 안내하세요.</p>
+    <form method="post" action="{% url 'attendance:session_close' session.pk %}">
+      {% csrf_token %}
+      <button type="submit">세션 마감하기</button>
+    </form>
+  {% endif %}
+</div>
+<div class="card">
+  <h2>출석 기록</h2>
+  {% if records %}
+    <table>
+      <tr><th>학번</th><th>이름</th><th>상태</th><th>체크 시각</th></tr>
+      {% for record in records %}
+        <tr>
+          <td>{{ record.student.student_id }}</td>
+          <td>{{ record.student.username }}</td>
+          <td>{{ record.get_status_display }}</td>
+          <td>{{ record.checked_at|default:"-" }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>아직 체크인한 학생이 없습니다.</p>
+  {% endif %}
+</div>
+<p><a href="{% url 'attendance:course_sessions' course.pk %}">← 세션 목록으로</a></p>
+{% endblock %}

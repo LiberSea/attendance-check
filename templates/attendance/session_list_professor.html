@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}출석 관리 - {{ course.name }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>{{ course.name }} 출석 관리</h1>
+  <form method="post" action="{% url 'attendance:session_open' course.pk %}">
+    {% csrf_token %}
+    <button type="submit">+ 오늘 출석 세션 열기</button>
+  </form>
+</div>
+<div class="card">
+  <h2>출석 세션 목록</h2>
+  {% if sessions %}
+    <table>
+      <tr><th>날짜</th><th>상태</th><th>코드</th><th></th></tr>
+      {% for session in sessions %}
+        <tr>
+          <td>{{ session.date }}</td>
+          <td>{% if session.is_open %}진행중{% else %}마감{% endif %}</td>
+          <td>{{ session.code }}</td>
+          <td><a href="{% url 'attendance:session_detail' session.pk %}">보기</a></td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>아직 출석 세션이 없습니다.</p>
+  {% endif %}
+</div>
+{% endblock %}
