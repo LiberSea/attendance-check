@@ -1,13 +1,16 @@
 {% extends "base.html" %}
 {% block title %}홈 - 출석체크 시스템{% endblock %}
 {% block content %}
-<div class="card">
-  <h1>대학교 출석체크 시스템</h1>
+<div class="card" style="text-align:center; padding:48px 28px;">
+  <h1 style="font-size:1.9rem;">대학교 출석체크 시스템</h1>
+  <p class="muted">강의 출석을 코드·QR로 손쉽게 관리하세요.</p>
   {% if user.is_authenticated %}
-    <p><a href="{% url 'accounts:dashboard' %}">대시보드로 이동</a></p>
+    <p style="margin-top:20px;"><a class="btn" href="{% url 'accounts:dashboard' %}">대시보드로 이동</a></p>
   {% else %}
-    <p>강의 출석을 온라인으로 손쉽게 관리하세요.</p>
-    <p><a href="{% url 'login' %}">로그인</a> 또는 <a href="{% url 'accounts:signup' %}">회원가입</a></p>
+    <p class="row" style="justify-content:center; margin-top:20px;">
+      <a class="btn" href="{% url 'accounts:signup' %}">회원가입</a>
+      <a href="{% url 'login' %}">로그인 →</a>
+    </p>
   {% endif %}
 </div>
 {% endblock %}

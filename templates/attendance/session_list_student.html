@@ -4,18 +4,32 @@
 <div class="card">
   <h1>{{ course.name }} 내 출석 현황</h1>
   {% if rows %}
-    <table>
-      <tr><th>날짜</th><th>상태</th><th></th></tr>
-      {% for session, record in rows %}
-        <tr>
-          <td>{{ session.date }}</td>
-          <td>{% if record %}{{ record.get_status_display }}{% else %}{% if session.is_open %}미체크(진행중){% else %}결석{% endif %}{% endif %}</td>
-          <td><a href="{% url 'attendance:session_detail' session.pk %}">보기</a></td>
-        </tr>
-      {% endfor %}
-    </table>
+    <div class="table-wrap">
+      <table>
+        <tr><th>날짜</th><th>상태</th><th></th></tr>
+        {% for session, record in rows %}
+          <tr>
+            <td>{{ session.date }}</td>
+            <td>
+              {% if record.status == "present" %}
+                <span class="badge badge-present">출석</span>
+              {% elif record.status == "late" %}
+                <span class="badge badge-late">지각</span>
+              {% elif record %}
+                <span class="badge badge-absent">결석</span>
+              {% elif session.is_open %}
+                <span class="badge badge-open">미체크(진행중)</span>
+              {% else %}
+                <span class="badge badge-absent">결석</span>
+              {% endif %}
+            </td>
+            <td><a href="{% url 'attendance:session_detail' session.pk %}">보기 →</a></td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
   {% else %}
-    <p>출석 기록이 없습니다.</p>
+    <p class="muted">출석 기록이 없습니다.</p>
   {% endif %}
 </div>
 {% endblock %}

@@ -3,18 +3,20 @@
 {% block content %}
 <div class="card">
   <h1>{{ user.username }}님, 환영합니다</h1>
-  <p>역할: {{ user.get_role_display }}</p>
-  {% if user.role == "student" %}
-    <p>학번: {{ user.student_id }}</p>
-  {% endif %}
+  <p class="row">
+    <span class="badge badge-open">{{ user.get_role_display }}</span>
+    {% if user.role == "student" %}<span class="muted">학번 {{ user.student_id }}</span>{% endif %}
+  </p>
 </div>
 <div class="card">
   <h2>강의</h2>
-  <p><a href="{% url 'courses:list' %}">내 강의 목록</a></p>
-  {% if user.role == "professor" %}
-    <p><a href="{% url 'courses:create' %}">+ 새 강의 개설</a></p>
-  {% else %}
-    <p><a href="{% url 'courses:enroll' %}">+ 수강신청</a></p>
-  {% endif %}
+  <div class="stack">
+    <a href="{% url 'courses:list' %}">내 강의 목록 →</a>
+    {% if user.role == "professor" %}
+      <a href="{% url 'courses:create' %}">+ 새 강의 개설</a>
+    {% else %}
+      <a href="{% url 'courses:enroll' %}">+ 수강신청</a>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}
