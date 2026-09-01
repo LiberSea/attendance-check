@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}시간표에서 강의 찾기{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>컴퓨터공학과 시간표</h1>
+  <p class="muted">시간표를 보고 원하는 과목을 클릭해서 바로 수강신청하세요.</p>
+  {% if user.role == "student" %}
+    <p class="row">
+      <span class="badge badge-present">수강중</span>
+      <span class="muted">내 강의</span>
+      <span class="badge badge-absent">시간 충돌</span>
+      <span class="muted">이미 신청한 강의와 시간이 겹침</span>
+    </p>
+  {% endif %}
+  <p><a href="{% url 'courses:enroll' %}">강의 코드로 직접 신청하기 →</a></p>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <div class="timetable-grid" style="--tt-rows: {{ periods|length }};">
+      <div class="tt-cell tt-corner"></div>
+      {% for value, label in days %}
+        <div class="tt-cell tt-head" style="grid-column: {{ forloop.counter|add:1 }}; grid-row: 1;">{{ label }}</div>
+      {% endfor %}
+
+      {% for hour in periods %}
+        <div class="tt-cell tt-time" style="grid-column: 1; grid-row: {{ forloop.counter|add:1 }};">{{ hour }}:00</div>
+        {% for value, label in days %}
+          <div class="tt-cell tt-bg" style="grid-column: {{ forloop.counter|add:1 }}; grid-row: {{ forloop.parentloop.counter|add:1 }};"></div>
+        {% endfor %}
+      {% endfor %}
+
+      {% for block in blocks %}
+        <div class="course-block {% if block.is_mine %}mine{% elif block.has_conflict %}conflict{% endif %}"
+             style="grid-column: {{ block.day_index|add:2 }}; grid-row: {{ block.start_hour|add:"-7" }} / span {{ block.span }};">
+          <strong title="{{ block.course.name }}">{{ block.course.name }}</strong>
+          <span class="muted meta" title="{{ block.course.code }} · {{ block.course.start_time|time:"H:i" }}–{{ block.course.end_time|time:"H:i" }} · {{ block.course.classroom }}">
+            {{ block.course.code }} · {{ block.course.start_time|time:"H:i" }}–{{ block.course.end_time|time:"H:i" }}
+          </span>
+          {% if user.role == "student" %}
+            {% if block.is_mine %}
+              <span class="badge badge-present">수강중</span>
+            {% elif block.has_conflict %}
+              <span class="badge badge-absent">시간 충돌</span>
+            {% else %}
+              <form method="post" action="{% url 'courses:enroll_click' block.course.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-sm">신청하기</button>
+              </form>
+            {% endif %}
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

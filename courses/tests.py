@@ -57,3 +57,59 @@ class CourseFlowTests(TestCase):
         self.client.force_login(outsider)
         response = self.client.get(reverse("courses:detail", args=[course.pk]))
         self.assertEqual(response.status_code, 403)
+
+
+class TimetableTests(TestCase):
+    def setUp(self):
+        self.professor = User.objects.create_user(
+            username="prof1", password="TestPass123!", role=User.Role.PROFESSOR
+        )
+        self.student = User.objects.create_user(
+            username="student1",
+            password="TestPass123!",
+            role=User.Role.STUDENT,
+            student_id="20240001",
+        )
+        self.course_a = Course.objects.create(
+            name="자료구조", code="CS201", professor=self.professor,
+            day_of_week=Course.Day.MON, start_time="09:00", end_time="10:00", classroom="공학관 401",
+        )
+        self.course_b = Course.objects.create(
+            name="알고리즘", code="CS301", professor=self.professor,
+            day_of_week=Course.Day.MON, start_time="09:30", end_time="11:00", classroom="공학관 402",
+        )
+        self.course_c = Course.objects.create(
+            name="운영체제", code="CS302", professor=self.professor,
+            day_of_week=Course.Day.TUE, start_time="09:00", end_time="10:00", classroom="공학관 403",
+        )
+
+    def test_timetable_shows_scheduled_courses(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("courses:timetable"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "자료구조")
+        self.assertContains(response, "알고리즘")
+        self.assertContains(response, "운영체제")
+
+    def test_student_can_enroll_by_clicking(self):
+        self.client.force_login(self.student)
+        response = self.client.post(reverse("courses:enroll_click", args=[self.course_a.pk]))
+        self.assertRedirects(response, reverse("courses:timetable"))
+        self.assertTrue(self.course_a.enrollments.filter(student=self.student).exists())
+
+    def test_time_conflict_blocks_second_enrollment(self):
+        self.client.force_login(self.student)
+        self.client.post(reverse("courses:enroll_click", args=[self.course_a.pk]))
+        self.client.post(reverse("courses:enroll_click", args=[self.course_b.pk]))
+        self.assertFalse(self.course_b.enrollments.filter(student=self.student).exists())
+
+    def test_non_conflicting_course_can_be_enrolled(self):
+        self.client.force_login(self.student)
+        self.client.post(reverse("courses:enroll_click", args=[self.course_a.pk]))
+        self.client.post(reverse("courses:enroll_click", args=[self.course_c.pk]))
+        self.assertTrue(self.course_c.enrollments.filter(student=self.student).exists())
+
+    def test_professor_cannot_enroll(self):
+        self.client.force_login(self.professor)
+        response = self.client.post(reverse("courses:enroll_click", args=[self.course_a.pk]))
+        self.assertEqual(response.status_code, 403)
