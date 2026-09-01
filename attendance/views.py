@@ -1,8 +1,11 @@
 import csv
+from io import BytesIO
 
+import qrcode
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import User
@@ -133,9 +136,29 @@ def check_in(request, pk):
                 )
                 return redirect("attendance:session_detail", pk=pk)
     else:
-        form = CheckInForm()
+        initial = {}
+        code_param = request.GET.get("code")
+        if code_param:
+            initial["code"] = code_param
+        form = CheckInForm(initial=initial)
 
     return render(request, "attendance/check_in.html", {"form": form, "session": session, "course": course})
+
+
+@login_required
+def session_qr(request, pk):
+    session = get_object_or_404(AttendanceSession, pk=pk)
+    course = session.course
+    if not _is_course_owner(request.user, course):
+        return HttpResponseForbidden("교수만 QR코드를 볼 수 있습니다.")
+
+    check_in_path = reverse("attendance:check_in", args=[session.pk])
+    check_in_url = request.build_absolute_uri(f"{check_in_path}?code={session.code}")
+
+    img = qrcode.make(check_in_url)
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    return HttpResponse(buffer.getvalue(), content_type="image/png")
 
 
 @login_required

@@ -115,3 +115,38 @@ class AttendanceStatsTests(TestCase):
         content = response.content.decode("utf-8-sig")
         self.assertIn("20240001", content)
         self.assertIn("출석", content)
+
+
+class QrCodeTests(TestCase):
+    def setUp(self):
+        self.professor = User.objects.create_user(
+            username="prof1", password="TestPass123!", role=User.Role.PROFESSOR
+        )
+        self.student = User.objects.create_user(
+            username="student1",
+            password="TestPass123!",
+            role=User.Role.STUDENT,
+            student_id="20240001",
+        )
+        self.course = Course.objects.create(name="자료구조", code="CS201", professor=self.professor)
+        self.course.enrollments.create(student=self.student)
+        self.session = AttendanceSession.objects.create(course=self.course, date="2026-09-01")
+
+    def test_professor_can_view_qr_image(self):
+        self.client.force_login(self.professor)
+        response = self.client.get(reverse("attendance:session_qr", args=[self.session.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/png")
+
+    def test_student_cannot_view_qr_image(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("attendance:session_qr", args=[self.session.pk]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_check_in_form_prefills_code_from_query_param(self):
+        self.client.force_login(self.student)
+        response = self.client.get(
+            reverse("attendance:check_in", args=[self.session.pk]) + f"?code={self.session.code}"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.session.code)

@@ -6,7 +6,8 @@
   <p>상태: {% if session.is_open %}진행중{% else %}마감됨{% endif %}</p>
   {% if session.is_open %}
     <p>출석 코드: <strong style="font-size:1.5em">{{ session.code }}</strong></p>
-    <p>학생들에게 이 코드를 공유해 출석 체크를 하도록 안내하세요.</p>
+    <p><img src="{% url 'attendance:session_qr' session.pk %}" alt="출석 QR코드" width="220" height="220"></p>
+    <p>학생들에게 코드를 알려주거나 QR코드를 스캔하도록 안내하세요.</p>
     <form method="post" action="{% url 'attendance:session_close' session.pk %}">
       {% csrf_token %}
       <button type="submit">세션 마감하기</button>
